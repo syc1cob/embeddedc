@@ -1,0 +1,89 @@
+Embedded System Memory Model
+
+
+In an embedded system with Flash and SRAM, the various segments of the memory model are typically allocated as follows:
+
+1. Flash Memory
+Flash memory is non-volatile and is used to store code and data that need to persist across power cycles. The following segments are usually loaded into Flash:
+
+.text Segment
+This segment contains the program's executable code (machine instructions). It is always stored in Flash because it doesn’t need to be modified during runtime.
+
+.rodata Segment
+This segment holds read-only data, such as string literals and constant variables (const). It is stored in Flash because it does not require runtime modifications.
+
+2. SRAM (RAM)
+SRAM is volatile memory used for data that changes during program execution. The following segments are typically loaded into SRAM:
+
+.data Segment
+
+Contains initialized global and static variables.
+The initial values of these variables are stored in Flash at program startup and then copied to SRAM during system initialization (e.g., by a startup routine or bootloader).
+Example: int x = 5; (initialized global variable).
+.bss Segment
+
+Contains uninitialized global and static variables.
+At startup, these variables are zero-initialized in SRAM.
+Example: int y; or static int z; (uninitialized global/static variables).
+Heap and Stack
+
+Heap: Used for dynamically allocated memory (malloc, new, etc.).
+Stack: Used for function call frames, local variables, and return addresses.
+Both are entirely located in SRAM.
+
+Memory Allocation Summary
+Segment	        Flash	                          SRAM
+.text	        Program code      	               —
+.rodata	      Read-only constants	               —
+.data	        Initial values (in Flash)	     Copied at runtime
+.bss	            —	                         Zero-initialized
+Heap	            —	                         Fully in SRAM
+Stack           	—	                         Fully in SRAM
+
+Example Workflow
+Startup Process:
+The bootloader or startup code copies the .data segment from Flash to SRAM.
+It initializes the .bss segment to zero in SRAM.
+Runtime:
+Code executes from Flash (.text).
+Variables in .data and .bss, along with heap and stack, reside in SRAM for faster access.
+This separation ensures the efficient use of non-volatile Flash for static code and constants, while volatile SRAM is used for dynamic and modifiable data during execution.
+
+Question:
+For example there is an initialized global data
+int pp = 10;
+Here whether variable pp will be stored under SRAM and value 10 will be loaded in Flash and then copied to SRAM. Is it like that?
+Answer:
+Yes, your understanding is correct. Here's a breakdown of what happens to the variable int pp = 10; in an embedded system with Flash and SRAM:
+
+At Compile Time:
+Variable Definition: int pp = 10; is an initialized global variable, which means it belongs to the .data segment.
+Storage Allocation:
+The variable pp (its address) is allocated in SRAM.
+The initial value 10 is stored in Flash as part of the firmware image.
+
+At Runtime (During System Initialization):
+Startup Code Execution:
+During the system startup, the startup code or bootloader is responsible for copying initialized data from Flash to SRAM.
+The initial value 10 is read from Flash and written into the memory location of pp in SRAM.
+Result:
+The variable pp resides in SRAM during program execution, allowing it to be modified if needed.
+The original initial value 10 remains in Flash (as part of the firmware) and is not used again after initialization.
+Why is this Done?
+Flash is Non-Volatile: Flash memory retains the data (like the initial value 10) even when the system is powered off.
+SRAM is Faster: The variable is copied to SRAM at runtime to allow faster access and modification.
+Example in Memory
+Assume the system starts running:
+
+Memory Type	Segment	Content
+Flash	.data	Initial value 10 for pp.
+SRAM	.data	Variable pp with value 10.
+Modifications During Runtime
+After initialization, the variable pp exists in SRAM, so it can be modified freely. For example:
+
+c
+Copy code
+pp = 20; // Changes the value in SRAM
+The new value (20) is stored in SRAM.
+The original value (10) in Flash remains unchanged and unused unless the system is reset.
+This mechanism ensures that the embedded system uses Flash efficiently for non-volatile storage while leveraging the speed of SRAM for runtime operations.
